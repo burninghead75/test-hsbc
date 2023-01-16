@@ -1,13 +1,12 @@
 package com.hsbc.brule;
 
-import com.hsbc.brule.IntegerEvenSlidingWindowStatistics.IntegerEventStatistics;
-import com.hsbc.brule.ProbabilisticRandomGen.NumAndProbability;
-import com.hsbc.brule.SlidingWindowStatistics.Statistics;
+import com.hsbc.brule.statistics.IntegerEvenSlidingWindowStatistics;
+import com.hsbc.brule.statistics.IntegerEvenSlidingWindowStatistics.IntegerEventStatistics;
+import com.hsbc.brule.event.NumAndProbabilityEvent;
+import com.hsbc.brule.statistics.SlidingWindowStatistics.Statistics;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
@@ -15,35 +14,34 @@ import static org.mockito.Mockito.when;
 class IntegerEvenSlidingWindowStatisticsTest {
 
     @Test
-    void integerEvenSlidingWindowStatisticsTest() {
+    void integerEvenSlidingWindowStatisticsTest() throws InterruptedException {
         final IntegerEvenSlidingWindowStatistics slidingWindowStatistic = new IntegerEvenSlidingWindowStatistics(1);
 
-        final Event event1 = createMockEvent(5,9000l);
-        final Event event2 = createMockEvent(5,10000l);
-        final Event event3 = createMockEvent(5,10100l);
-        final Event event4 = createMockEvent(3,10200l);
-        final Event event5 = createMockEvent(3,10500l);
-        final Event event6 = createMockEvent(7,11010l);
+        final NumAndProbabilityEvent event1 = createMockEvent(5,0.5f);
+        final NumAndProbabilityEvent event2 = createMockEvent(5,0.25f);
+        final NumAndProbabilityEvent event3 = createMockEvent(5,0.75f);
+        final NumAndProbabilityEvent event4 = createMockEvent(3,0.15f);
+        final NumAndProbabilityEvent event5 = createMockEvent(3,0.55f);
+        final NumAndProbabilityEvent event6 = createMockEvent(7,0.52f);
 
         slidingWindowStatistic.add(event1);
         slidingWindowStatistic.add(event2);
         slidingWindowStatistic.add(event3);
         slidingWindowStatistic.add(event4);
+        Thread.sleep(1500);
         slidingWindowStatistic.add(event5);
         slidingWindowStatistic.add(event6);
 
         final Statistics latestStatistics = slidingWindowStatistic.getLatestStatistics();
 
         assertThat(latestStatistics.getMode(), is(equalTo(3)));
-        assertThat(latestStatistics.getMean(), is(equalTo(9f/2f)));
+        assertThat(latestStatistics.getMean(), is(equalTo(5f)));
     }
 
-    Event createMockEvent(int value, long timestamp){
-        final Event event = Mockito.mock(Event.class);
-        final NumAndProbability numAndProbability = Mockito.mock(NumAndProbability.class);
-        when(event.getEventBody()).thenReturn(numAndProbability);
-        when(numAndProbability.getNumber()).thenReturn(value);
-        when(event.getTimeStampInNano()).thenReturn(timestamp);
+    NumAndProbabilityEvent createMockEvent(int value, float probability){
+        final NumAndProbabilityEvent event = Mockito.mock(NumAndProbabilityEvent.class);
+        when(event.getNumber()).thenReturn(value);
+        when(event.getProbabilityOfSample()).thenReturn(probability);
         return event;
     }
 

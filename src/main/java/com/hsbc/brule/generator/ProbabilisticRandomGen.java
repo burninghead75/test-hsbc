@@ -1,4 +1,4 @@
-package com.hsbc.brule;
+package com.hsbc.brule.generator;
 
 public interface ProbabilisticRandomGen {
     NumAndProbability nextFromSample();

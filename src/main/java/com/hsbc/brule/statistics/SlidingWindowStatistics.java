@@ -1,4 +1,4 @@
-package com.hsbc.brule;
+package com.hsbc.brule.statistics;
 
 public interface SlidingWindowStatistics<I> {
     void add(I measurement);

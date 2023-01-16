@@ -1,17 +1,25 @@
 package com.hsbc.brule;
 
+import com.hsbc.brule.bus.SingleThreadEventBusImpl;
+import com.hsbc.brule.event.EventFilter;
+import com.hsbc.brule.event.NumAndProbabilityEvent;
+import com.hsbc.brule.generator.ProbabilisticRandomGen;
+import com.hsbc.brule.subscriber.Subscriber;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import static com.hsbc.brule.ProbabilisticRandomGenImpl.createWithGeneratedValue;
+import static com.hsbc.brule.generator.ProbabilisticRandomGenImpl.createWithGeneratedValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 class SingleThreadEventBusImplTest {
 
-    private EventBus eventBus;
+    private SingleThreadEventBusImpl eventBus;
     private ProbabilisticRandomGen randomGen;
 
     @BeforeEach
@@ -29,16 +37,28 @@ class SingleThreadEventBusImplTest {
         eventBus.addSubscriber(subscriber1);
         eventBus.addSubscriber(subscriber2);
 
-        final Event event1 = Event.of(randomGen.nextFromSample());
-        final Event event2 = Event.of(randomGen.nextFromSample());
+        final NumAndProbabilityEvent event1 = NumAndProbabilityEvent.of(randomGen.nextFromSample());
+        final NumAndProbabilityEvent event2 = NumAndProbabilityEvent.of(randomGen.nextFromSample());
 
-        eventBus.publishEvent(event1);
-        eventBus.publishEvent(event2);
 
-        Mockito.verify(subscriber1).onEventReceived(event1);
-        Mockito.verify(subscriber1).onEventReceived(event2);
-        Mockito.verify(subscriber2).onEventReceived(event1);
-        Mockito.verify(subscriber2).onEventReceived(event2);
+        ArgumentCaptor<NumAndProbabilityEvent> argument1_1 = ArgumentCaptor.forClass(NumAndProbabilityEvent.class);
+        ArgumentCaptor<NumAndProbabilityEvent> argument1_2 = ArgumentCaptor.forClass(NumAndProbabilityEvent.class);
+        ArgumentCaptor<NumAndProbabilityEvent> argument2_1 = ArgumentCaptor.forClass(NumAndProbabilityEvent.class);
+        ArgumentCaptor<NumAndProbabilityEvent> argument2_2 = ArgumentCaptor.forClass(NumAndProbabilityEvent.class);
+
+        eventBus.publish(event1);
+        eventBus.publish(event2);
+
+        Mockito.verify(subscriber1, times(2)).onEventReceived(argument1_1.capture());
+        Mockito.verify(subscriber2, times(2)).onEventReceived(argument2_1.capture());
+        assertThat(argument1_1.getAllValues().get(0).getNumber(), is(event1.getNumber()));
+        assertThat(argument1_1.getAllValues().get(0).getProbabilityOfSample(), is(event1.getProbabilityOfSample()));
+        assertThat(argument2_1.getAllValues().get(0).getNumber(), is(event1.getNumber()));
+        assertThat(argument2_1.getAllValues().get(0).getProbabilityOfSample(), is(event1.getProbabilityOfSample()));
+        assertThat(argument1_1.getAllValues().get(1).getNumber(), is(event2.getNumber()));
+        assertThat(argument1_1.getAllValues().get(1).getProbabilityOfSample(), is(event2.getProbabilityOfSample()));
+        assertThat(argument2_1.getAllValues().get(1).getNumber(), is(event2.getNumber()));
+        assertThat(argument2_1.getAllValues().get(1).getProbabilityOfSample(), is(event2.getProbabilityOfSample()));
 
     }
 
@@ -51,14 +71,14 @@ class SingleThreadEventBusImplTest {
         eventBus.addSubscriber(subscriber);
         eventBus.addSubscriberForFilteredEvents(subscriberWithFilter, eventFilter);
 
-        final Event event1 = Event.of(randomGen.nextFromSample());
-        final Event event2 = Event.of(randomGen.nextFromSample());
+        final NumAndProbabilityEvent event1 = NumAndProbabilityEvent.of(randomGen.nextFromSample());
+        final NumAndProbabilityEvent event2 = NumAndProbabilityEvent.of(randomGen.nextFromSample());
 
         when(eventFilter.match(event1)).thenReturn(true);
         when(eventFilter.match(event2)).thenReturn(false);
 
-        eventBus.publishEvent(event1);
-        eventBus.publishEvent(event2);
+        eventBus.publish(event1);
+        eventBus.publish(event2);
 
         Mockito.verify(subscriber, times(2)).onEventReceived(any());
         Mockito.verify(subscriberWithFilter, times(1)).onEventReceived(any());

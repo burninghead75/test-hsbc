@@ -1,4 +1,4 @@
-package com.hsbc.brule;
+package com.hsbc.brule.generator;
 
 import java.util.*;
 import java.util.stream.IntStream;
@@ -6,15 +6,21 @@ import java.util.stream.IntStream;
 public class ProbabilisticRandomGenImpl implements ProbabilisticRandomGen {
 
     public static final int DEFAULT_NUMBER_OF_SAMPLE = 100;
-    private final Queue<NumAndProbability> numAndProbabilitiesQueue = new LinkedList<>();
 
-    private ProbabilisticRandomGenImpl(Collection<NumAndProbability> numAndProbabilities){
-        numAndProbabilitiesQueue.addAll(numAndProbabilities);
+    private final NumAndProbability[] numAndProbabilities;
+
+    private int index = -1;
+
+    private final int maxIndex;
+
+    private ProbabilisticRandomGenImpl(List<NumAndProbability> numAndProbabilities){
+        maxIndex = numAndProbabilities.size();
+        this.numAndProbabilities = numAndProbabilities.toArray(new NumAndProbability[maxIndex]);
     }
 
     @Override
     public NumAndProbability nextFromSample() {
-        return numAndProbabilitiesQueue.poll();
+        return ++index < maxIndex ? numAndProbabilities[index] : null;
     }
 
     public static ProbabilisticRandomGen createWithGeneratedValue() {
@@ -30,7 +36,7 @@ public class ProbabilisticRandomGenImpl implements ProbabilisticRandomGen {
         return new ProbabilisticRandomGenImpl(numAndProbabilityList);
     }
 
-    public static ProbabilisticRandomGen create(Collection<NumAndProbability> numAndProbabilities){
+    public static ProbabilisticRandomGen create(List<NumAndProbability> numAndProbabilities){
         return new ProbabilisticRandomGenImpl(numAndProbabilities);
     }
 }
